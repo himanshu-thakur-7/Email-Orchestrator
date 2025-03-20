@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --grid-size: 30px;
+  }
+  
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased min-h-screen;
+  }
+}
+
+@layer components {
+  .shadow-glow {
+    @apply shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)];
+  }
+}
