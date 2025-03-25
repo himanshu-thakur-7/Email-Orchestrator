@@ -260,9 +260,8 @@ def store_email(email_data: dict):
     collection.insert_one(email_data)
 
 
-def search_similar_emails(email_text: str):
+def search_similar_emails(query_embedding):
     """Performs a vector search in MongoDB for similar emails."""
-    query_embedding = get_embedding(email_text)
     pipeline = [
         {
             "$vectorSearch": {
@@ -372,7 +371,8 @@ async def process_email(
 
         # Classify the email
         classification = await classify_email(extracted_text)
-        similar_emails = search_similar_emails(extracted_text)
+        embedded_email = get_embedding(extracted_text)
+        similar_emails = search_similar_emails(embedded_email)
 
         # Generate a random receiver email ID
         receiver_email = generate_random_email()
@@ -388,7 +388,7 @@ async def process_email(
             "receiver_email": receiver_email,
             "created_at": timestamp,
             "attachments": processed_attachments,
-            "embedding": get_embedding(extracted_text),
+            "embedding": embedded_email,
         }
 
         # Store the email in MongoDB
