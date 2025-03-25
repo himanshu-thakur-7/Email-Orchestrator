@@ -10,6 +10,7 @@ export const HoverEffect = ({
     icon: React.ReactNode;
     title: string;
     description: string;
+    onClick?: () => void;
   }[];
   className?: string;
 }) => {
@@ -42,18 +43,24 @@ export const HoverEffect = ({
 
   const handleTouchEnd = () => {
     if (touchStart - touchEnd > 50) {
-      // Swipe left
       handleNext();
     }
     if (touchStart - touchEnd < -50) {
-      // Swipe right
       handlePrev();
+    }
+  };
+
+  const handleClick = () => {
+    if (items[currentIndex].onClick) {
+      items[currentIndex].onClick();
     }
   };
 
   return (
     <div className={cn("relative", className)}>
       <div
+        role="region"
+        aria-label="Carousel"
         className="overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -67,6 +74,9 @@ export const HoverEffect = ({
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
             className="relative group block p-2 h-full w-full"
+            role="button"
+            onClick={handleClick}
+            style={{ cursor: items[currentIndex].onClick ? 'pointer' : 'default' }}
           >
             <div className="rounded-2xl h-full w-full p-4 overflow-hidden bg-zinc-900 border border-zinc-800 relative z-20">
               <div className="relative z-50">

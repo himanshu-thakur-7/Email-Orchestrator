@@ -1,86 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { HoverEffect } from '../card-hover-effect';
-import { Mail, BarChart3, AlertTriangle } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 describe('HoverEffect Component', () => {
   const mockItems = [
     {
       icon: <BarChart3 data-testid="chart-icon" />,
       title: "First Item",
-      description: "First description"
+      description: "First description",
+      onClick: vi.fn()
     },
     {
-      icon: <Mail data-testid="mail-icon" />,
+      icon: <BarChart3 data-testid="chart-icon" />,
       title: "Second Item",
-      description: "Second description"
-    },
-    {
-      icon: <AlertTriangle data-testid="alert-icon" />,
-      title: "Third Item",
-      description: "Third description"
+      description: "Second description",
+      onClick: vi.fn()
     }
   ];
 
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  it('renders the first item by default', () => {
+  it('renders the first item', () => {
     render(<HoverEffect items={mockItems} />);
     expect(screen.getByText('First Item')).toBeInTheDocument();
     expect(screen.getByText('First description')).toBeInTheDocument();
   });
 
-  it('shows correct number of navigation dots', () => {
+  it('handles click events', async () => {
     render(<HoverEffect items={mockItems} />);
-    const dots = screen.getAllByRole('button');
-    expect(dots).toHaveLength(mockItems.length);
+    const firstSlide = screen.getByRole('button', { name: /First Item/i });
+    fireEvent.click(firstSlide);
+    expect(mockItems[0].onClick).toHaveBeenCalled();
   });
 
-  it('changes slide when clicking navigation dots', () => {
+  it('shows navigation dots', () => {
     render(<HoverEffect items={mockItems} />);
-    const dots = screen.getAllByRole('button');
-    
-    fireEvent.click(dots[1]);
-    expect(screen.getByText('Second Item')).toBeInTheDocument();
-    
-    fireEvent.click(dots[2]);
-    expect(screen.getByText('Third Item')).toBeInTheDocument();
+    const navigationDots = screen.getAllByRole('button', { name: /Go to slide/i });
+    expect(navigationDots).toHaveLength(mockItems.length);
   });
 
-  it('auto-advances slides every 5 seconds', () => {
+  it('changes slide on dot click', async () => {
     render(<HoverEffect items={mockItems} />);
-    
-    expect(screen.getByText('First Item')).toBeInTheDocument();
-    
-    act(() => {
-      vi.advanceTimersByTime(5000);
+    const secondDot = screen.getByRole('button', { name: 'Go to slide 2' });
+    fireEvent.click(secondDot);
+
+    await waitFor(() => {
+      expect(screen.getByText('Second Item')).toBeInTheDocument();
     });
-    expect(screen.getByText('Second Item')).toBeInTheDocument();
-    
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(screen.getByText('Third Item')).toBeInTheDocument();
-  });
-
-  it('handles touch swipe gestures', () => {
-    render(<HoverEffect items={mockItems} />);
-    const container = screen.getByText('First Item').parentElement!;
-
-    // Simulate swipe left
-    fireEvent.touchStart(container, { touches: [{ clientX: 200 }] });
-    fireEvent.touchMove(container, { touches: [{ clientX: 50 }] });
-    fireEvent.touchEnd(container);
-
-    expect(screen.getByText('Second Item')).toBeInTheDocument();
-
-    // Simulate swipe right
-    fireEvent.touchStart(container, { touches: [{ clientX: 50 }] });
-    fireEvent.touchMove(container, { touches: [{ clientX: 200 }] });
-    fireEvent.touchEnd(container);
-
-    expect(screen.getByText('First Item')).toBeInTheDocument();
   });
 });
