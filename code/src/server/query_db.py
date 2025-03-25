@@ -19,7 +19,7 @@ def get_embedding(text):
 
 # Connect to your Atlas cluster
 mongo_client = pymongo.MongoClient(os.getenv("MONGO_CONNECTION_STRING"))
-db = mongo_client[os.getenv("MONGO_DB_NAME", "loan-servicing")]
+db = mongo_client[os.getenv("MONGO_DB_NAME", "dashboard")]
 collection = db[os.getenv("MONGO_COLLECTION_NAME", "emails")]
 
 # Generate embedding for the search query
