@@ -82,7 +82,7 @@ function App() {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [categories, setCategories] = useState(fallbackCategories);
-  
+
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -90,32 +90,45 @@ function App() {
         setIsLoadingEmails(true);
 
         // Fetch categories first
-        const fetchedCategories = await emailApi.fetchCategories();
-        if (fetchedCategories.length > 0) {
-          const iconMap: { [key: string]: React.ReactNode } = {
-            'Inbox': <Inbox className="h-4 w-4" />,
-            'FileText': <FileText className="h-4 w-4" />,
-            'AlertTriangle': <AlertTriangle className="h-4 w-4" />,
-            'HelpCircle': <HelpCircle className="h-4 w-4" />,
-            'Mail': <Mail className="h-4 w-4" />
-          };
-          
-          const mappedCategories = [
-            { name: 'all', icon: <Inbox className="h-4 w-4" />, label: 'All Emails' },
-            ...fetchedCategories.map(cat => ({
-              name: cat.name.toLowerCase(),
-              icon: iconMap[cat.icon] || <Mail className="h-4 w-4" />,
-              label: cat.label
-            }))
-          ];
-          setCategories(mappedCategories);
-        }
-        
-        setIsLoading(false);
+        // const fetchedCategories = await emailApi.fetchCategories();
+        // if (fetchedCategories.length > 0) {
+        //   const iconMap: { [key: string]: React.ReactNode } = {
+        //     'Inbox': <Inbox className="h-4 w-4" />,
+        //     'FileText': <FileText className="h-4 w-4" />,
+        //     'AlertTriangle': <AlertTriangle className="h-4 w-4" />,
+        //     'HelpCircle': <HelpCircle className="h-4 w-4" />,
+        //     'Mail': <Mail className="h-4 w-4" />
+        //   };
+
+        //   const mappedCategories = [
+        //     { name: 'all', icon: <Inbox className="h-4 w-4" />, label: 'All Emails' },
+        //     ...fetchedCategories.map(cat => ({
+        //       name: cat.name.toLowerCase(),
+        //       icon: iconMap[cat.icon] || <Mail className="h-4 w-4" />,
+        //       label: cat.label
+        //     }))
+        //   ];
+        //   setCategories(mappedCategories);
+        // }
+
 
         // Then fetch emails
         const fetchedEmails = await emailApi.fetchEmails();
         setEmails(fetchedEmails.length > 0 ? fetchedEmails : fallbackEmails);
+
+        const cats = fetchedEmails.map(email => email.category);
+        const uniqueCats = [...new Set(cats)];
+        const mappedCategories = [
+          { name: 'all', icon: <Inbox className="h-4 w-4" />, label: 'All Emails' },
+          ...uniqueCats.map(cat => ({
+            name: cat.toLowerCase(),
+            icon: <Mail className="h-4 w-4" />,
+            label: cat
+          }))
+        ];
+        setCategories(mappedCategories);
+
+        setIsLoading(false);
         setIsLoadingEmails(false);
       } catch (error) {
         console.error('Failed to fetch initial data:', error);
@@ -130,24 +143,66 @@ function App() {
   }, []);
 
   const filteredEmails = emails.filter(email => {
-    const categoryMatch = selectedCategory === 'all' || 
+    const categoryMatch = selectedCategory === 'all' ||
       email.category.toLowerCase() === selectedCategory;
-    
-    const searchMatch = searchQuery === '' || 
+
+    const searchMatch = searchQuery === '' ||
       email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       email.sender.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return categoryMatch && searchMatch;
   });
 
+  const categoryMap: { [key: string]: number } = {};
+
   const getCategoryColor = (category: string) => {
-    const colors = {
-      'Invoice': 'bg-blue-900/30 text-blue-300 border border-blue-800/50',
-      'Support': 'bg-red-900/30 text-red-300 border border-red-800/50',
-      'Spam': 'bg-yellow-900/30 text-yellow-300 border border-yellow-800/50',
-      'Inquiry': 'bg-green-900/30 text-green-300 border border-green-800/50'
-    };
-    return colors[category] || 'bg-zinc-900/30 text-zinc-300 border border-zinc-800/50';
+    const colors = [
+      'bg-blue-900/30 text-blue-300 border border-blue-800/50',
+      'bg-red-900/30 text-red-300 border border-red-800/50',
+      'bg-yellow-900/30 text-yellow-300 border border-yellow-800/50',
+      'bg-green-900/30 text-green-300 border border-green-800/50',
+      'bg-purple-900/30 text-purple-300 border border-purple-800/50',
+      'bg-pink-900/30 text-pink-300 border border-pink-800/50',
+      'bg-indigo-900/30 text-indigo-300 border border-indigo-800/50',
+      'bg-cyan-900/30 text-cyan-300 border border-cyan-800/50',
+      'bg-orange-900/30 text-orange-300 border border-orange-800/50',
+      'bg-teal-900/30 text-teal-300 border border-teal-800/50',
+      'bg-lime-900/30 text-lime-300 border border-lime-800/50',
+      'bg-violet-900/30 text-violet-300 border border-violet-800/50',
+      'bg-amber-900/30 text-amber-300 border border-amber-800/50',
+      'bg-emerald-900/30 text-emerald-300 border border-emerald-800/50',
+      'bg-crimson-900/30 text-crimson-300 border border-crimson-800/50',
+      'bg-rose-900/30 text-rose-300 border border-rose-800/50',
+      'bg-sky-900/30 text-sky-300 border border-sky-800/50',
+      'bg-azure-900/30 text-azure-300 border border-azure-800/50',
+      'bg-lavender-900/30 text-lavender-300 border border-lavender-800/50',
+      'bg-orchid-900/30 text-orchid-300 border border-orchid-800/50',
+      'bg-olive-900/30 text-olive-300 border border-olive-800/50',
+    ];
+
+    // Check if the category already has a color assigned
+    if (categoryMap[category] !== undefined) {
+      return colors[categoryMap[category]];
+    }
+
+    // Find the next free color
+    const usedIndices = new Set(Object.values(categoryMap));
+    let freeIndex = colors.findIndex((_, index) => !usedIndices.has(index));
+
+    // If no free color is available, assign any (fallback to hash-based index)
+    if (freeIndex === -1) {
+      const hash = (s: string) => {
+        return s.split('').reduce((a, b) => {
+          a = ((a << 5) - a) + b.charCodeAt(0);
+          return a & a;
+        }, 0);
+      };
+      freeIndex = Math.abs(hash(category)) % colors.length;
+    }
+
+    // Assign the color to the category and return it
+    categoryMap[category] = freeIndex;
+    return colors[freeIndex];
   };
 
   const handleSelectSimilarEmail = async (similarEmail: any) => {
@@ -175,8 +230,8 @@ function App() {
 
   if (selectedEmail) {
     return (
-      <EmailDetail 
-        email={selectedEmail} 
+      <EmailDetail
+        email={selectedEmail}
         onClose={() => setSelectedEmail(null)}
         onSelectEmail={handleSelectSimilarEmail}
         isLoadingSimilar={isLoadingSimilar}
@@ -213,7 +268,7 @@ function App() {
 
       <Footer />
 
-      <SettingsDialog 
+      <SettingsDialog
         isOpen={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />

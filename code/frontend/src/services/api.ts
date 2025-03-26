@@ -1,3 +1,4 @@
+import { Feature, Intent } from '@/components/email-detail/types';
 import axios from 'axios';
 
 // Simulate API delay
@@ -16,8 +17,7 @@ const transformEmailData = (document: any): EmailResponse => {
   const subject = subjectMatch ? subjectMatch[1].trim() : "No Subject";
 
   // Extract sender (in this case, we'll use the name at the end of the email)
-  const senderMatch = emailContent.match(/Best regards,\s*\n(.*?)$/m);
-  const sender = senderMatch ? senderMatch[1].trim() : "Unknown Sender";
+  const sender = document.receiver_email || "Unknown Sender";
 
   // Get the primary intent as the category
   const primaryIntent = document.classification.request_intents[0]?.intent || "Uncategorized";
@@ -25,12 +25,32 @@ const transformEmailData = (document: any): EmailResponse => {
   // Get the confidence score from the primary intent
   const confidence = document.classification.request_intents[0]?.confidence_score || 0;
 
+  const similar_emails = document.similar_emails.map((email: any) => ({
+    subject: getSubject(email.email),
+    similarity: email.score,
+    content: email.email
+  }));
+
+  const intents = document.classification.request_intents.map((intent: any) => ({
+    name: intent.intent,
+    confidence: intent.confidence_score,
+    reasoning: intent.reasoning
+  }));
+
+  const features = document.classification.sub_requests.map((feature: any) => ({
+    name: feature.sub_request,
+    reasoning: feature.reasoning
+  }));
+
   return {
     id: document.created_at, // Using timestamp as ID if no specific ID is provided
     subject,
     sender,
     category: primaryIntent.toLowerCase(), // Convert to lowercase to match category naming convention
+    request_types: intents,
+    sub_request_types: features,
     confidence,
+    similar_emails,
     timestamp: document.created_at,
     processed: true,
     content: emailContent.trim()
@@ -44,6 +64,12 @@ const api = axios.create({
   },
 });
 
+const getSubject = (email: string) => {
+  const subjectMatch = email.match(/Subject: (.*?)(?:\s{2,}|\n)/);
+  const subject = subjectMatch ? subjectMatch[1].trim() : "No Subject";
+  return subject;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -51,12 +77,21 @@ export interface Category {
   icon: string;
 }
 
+interface SimilarEmail {
+  subject: string;
+  similarity: number;
+  content: string;
+}
+
 export interface EmailResponse {
   id: string;
   subject: string;
   sender: string;
   category: string;
+  request_types: Intent[];
+  sub_request_types: Feature[];
   confidence: number;
+  similar_emails: SimilarEmail[];
   timestamp: string;
   processed: boolean;
   content?: string;
@@ -106,34 +141,47 @@ export const emailApi = {
 
   // Upload email files
   // Upload email files
-  uploadEmails: async (files: File[]): Promise<void> => { 
+  uploadEmails: async (files: File[]): Promise<void> => {
     try {
       console.log('Uploading files:', files);
       const formData = new FormData();
-  
+
       // Append each file to the form data using the same key for multiple files
       files.forEach((file) => {
         formData.append('attachments', file);
       });
-  
+
       // Send the files to the processing endpoint
       await api.post('/process_email', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-  
+
     } catch (error) {
       console.error('Error uploading emails:', error);
       throw new Error('Failed to upload email files');
     }
   },
-  
+
 
   // Configure model
   configureModel: async (configFile: File, prompt: string): Promise<void> => {
-    // Simulate configuration delay
-    await simulateDelay(2000, 4000);
+    try {
+      console.log('Configuring model with file:', configFile, 'and prompt:', prompt);
+      const formData = new FormData();
+      formData.append('file', configFile);
+      formData.append('prompt_text', prompt);
+
+      await api.post('/configure', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } catch (error) {
+      console.error('Error configuring model:', error);
+      throw new Error('Failed to configure model');
+    }
   },
 
   // Get email details with processing results

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, Form, File, HTTPException, Query
 from typing import List, Dict, Any, Optional
+from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from openai import AsyncOpenAI
 import os
@@ -30,6 +31,14 @@ load_dotenv()
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this in production to specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Initialize OpenAI client
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -40,7 +49,7 @@ db = client_db["dashboard"]
 collection = db["emails"]
 
 # Set the uploaded Assistant ID (Replace with actual ID after uploading)
-ASSISTANT_ID = "asst_meMZaQjNx416TJ6SMFTPaaTE"
+ASSISTANT_ID = "asst_FS8ltK3lrQwZ4BmGQ5CtD7ZI"
 
 # Create a temporary directory if it doesn't exist
 TMP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tmp")
@@ -245,14 +254,12 @@ async def classify_email(email_body: str) -> dict:
 
 
 # Define a function to generate embeddings
-def get_embedding(text):
+async def get_embedding(text):
     """Generates vector embeddings for the given text."""
-    embedding = (
-        client.embeddings.create(input=[text], model="text-embedding-3-small")
-        .data[0]
-        .embedding
+    embedding = await client.embeddings.create(
+        input=[text], model="text-embedding-3-small"
     )
-    return embedding
+    return embedding.data[0].embedding
 
 
 def store_email(email_data: dict):
@@ -272,7 +279,19 @@ def search_similar_emails(query_embedding):
                 "limit": 5,
             }
         },
-        {"$project": {"_id": 0, "email": 1, "score": {"$meta": "vectorSearchScore"}}},
+        {
+            "$project": {
+                "_id": 0,
+                "email": 1,
+                "classification": 1,
+                "receiver_email": 1,
+                "similar_emails": 1,
+                "created_at": 1,
+                "embedding": 0,
+                "attachments": 0,
+                "score": {"$meta": "vectorSearchScore"},
+            }
+        },
     ]
     results = collection.aggregate(pipeline)
     return list(results)
@@ -371,7 +390,7 @@ async def process_email(
 
         # Classify the email
         classification = await classify_email(extracted_text)
-        embedded_email = get_embedding(extracted_text)
+        embedded_email = await get_embedding(extracted_text)
         similar_emails = search_similar_emails(embedded_email)
 
         # Generate a random receiver email ID
@@ -390,6 +409,8 @@ async def process_email(
             "attachments": processed_attachments,
             "embedding": embedded_email,
         }
+
+        print(email_data)
 
         # Store the email in MongoDB
         store_email(email_data)
@@ -443,7 +464,10 @@ async def get_documents(collection_name: str, limit: int = 100, skip: int = 0):
 
         # Get documents with pagination
         documents = list(
-            target_collection.find({}, {"_id": False}).skip(skip).limit(limit)
+            target_collection.find({}, {"_id": False})
+            .sort("created_at", -1)
+            .skip(skip)
+            .limit(limit)
         )
 
         return {
@@ -553,7 +577,8 @@ async def configure_assistant(
         # Update the ASSISTANT_ID global variable for future requests
         global ASSISTANT_ID
         ASSISTANT_ID = assistant_id
-
+        print(f'Assistant ID: {ASSISTANT_ID}')
+        
         # Clean up - delete the temporary file
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
