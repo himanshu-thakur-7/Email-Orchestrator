@@ -10,21 +10,21 @@ const simulateDelay = (min: number = 1000, max: number = 2000): Promise<void> =>
 const transformEmailData = (document: any): EmailResponse => {
   // Parse the email content to extract subject, sender, etc.
   const emailContent = document.email;
-  
+
   // Extract subject from the email content
   const subjectMatch = emailContent.match(/Subject: (.*?)(?:\s{2,}|\n)/);
   const subject = subjectMatch ? subjectMatch[1].trim() : "No Subject";
-  
+
   // Extract sender (in this case, we'll use the name at the end of the email)
   const senderMatch = emailContent.match(/Best regards,\s*\n(.*?)$/m);
   const sender = senderMatch ? senderMatch[1].trim() : "Unknown Sender";
-  
+
   // Get the primary intent as the category
   const primaryIntent = document.classification.request_intents[0]?.intent || "Uncategorized";
-  
+
   // Get the confidence score from the primary intent
   const confidence = document.classification.request_intents[0]?.confidence_score || 0;
-  
+
   return {
     id: document.created_at, // Using timestamp as ID if no specific ID is provided
     subject,
@@ -93,41 +93,42 @@ export const emailApi = {
   // Fetch all emails
   fetchEmails: async (): Promise<EmailResponse[]> => {
     try {
-    const response = await api.get('/emails');
-    if (response.data && response.data.documents) {
-      return response.data.documents.map(transformEmailData);
-    }
-    return [];
+      const response = await api.get('/database/collections/emails/documents');
+      if (response.data && response.data.documents) {
+        return response.data.documents.map(transformEmailData);
+      }
+      return [];
     } catch (error) {
-    console.error('Error fetching emails:', error);
-    return [];
+      console.error('Error fetching emails:', error);
+      return [];
     };
   },
 
   // Upload email files
-// Upload email files
-uploadEmails: async (files: File[]): Promise<void> => {
-  try {
-    console.log('Uploading files:', files);
-    const formData = new FormData();
-    
-    // Append each file to the form data
-    files.forEach((file, index) => {
-      formData.append(`file${index}`, file);
-    });
-    
-    // Send the files to the processing endpoint
-    await api.post('/process_email', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-  } catch (error) {
-    console.error('Error uploading emails:', error);
-    throw new Error('Failed to upload email files');
-  }
-},
+  // Upload email files
+  uploadEmails: async (files: File[]): Promise<void> => { 
+    try {
+      console.log('Uploading files:', files);
+      const formData = new FormData();
+  
+      // Append each file to the form data using the same key for multiple files
+      files.forEach((file) => {
+        formData.append('attachments', file);
+      });
+  
+      // Send the files to the processing endpoint
+      await api.post('/process_email', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+    } catch (error) {
+      console.error('Error uploading emails:', error);
+      throw new Error('Failed to upload email files');
+    }
+  },
+  
 
   // Configure model
   configureModel: async (configFile: File, prompt: string): Promise<void> => {
