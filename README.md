@@ -14,47 +14,94 @@
 ---
 
 ## 🎯 Introduction
-A brief overview of your project and its purpose. Mention which problem statement are your attempting to solve. Keep it concise and engaging.
+The **Email Request Classification and Processing System** is an innovative solution designed to automate the handling of loan servicing request emails. It processes emails with attachments (DOC, PDF, text, or images), classifies request types, extracts detailed sub-requests, and identifies similar past emails using advanced AI and vector search technology. This project tackles the problem of manually processing large volumes of customer service emails in industries like banking and finance, aiming to boost efficiency, reduce errors, and enhance response times for customer inquiries.
+
+
 
 ## 🎥 Demo
 🔗 [Live Demo](#) (if applicable)  
 📹 [Video Demo](#) (if applicable)  
 🖼️ Screenshots:
+![image](https://github.com/user-attachments/assets/da55c1dd-ac10-454d-bb7f-20aefe4433fd)
+![image](https://github.com/user-attachments/assets/91c43bf2-c315-4e38-897f-02ab12121714)
+![image](https://github.com/user-attachments/assets/9a7bb5da-6c30-4f41-bae0-f60228312416)
 
-![Screenshot 1](link-to-image)
 
 ## 💡 Inspiration
-What inspired you to create this project? Describe the problem you're solving.
+The inspiration for this project stemmed from the overwhelming workload faced by customer service teams in the financial sector. Loan servicing departments often receive hundreds of emails daily, each requiring manual classification and response—a process that’s slow, repetitive, and prone to mistakes. We envisioned a system that leverages AI to automate email classification, extract critical details, and detect duplicates, freeing up human agents to focus on complex tasks and improving overall service quality.
+
 
 ## ⚙️ What It Does
-Explain the key features and functionalities of your project.
+This system offers a robust set of features to streamline email processing:
+Email Classification: Automatically identifies the request type (e.g., "Loan Balance Inquiry") using AI-powered analysis.
+
+* **Sub-Request Extraction**: Pulls out specific details (e.g., "Loan Account Number," "Interest Rate") with confidence scores for reliability.
+
+* **Duplicate Detection**: Uses vector search to compare new emails against past ones, flagging potential duplicates to avoid redundant work.
+
+* **Attachment Processing**: Extracts text from various attachment types (DOC, PDF, text, images) to ensure all relevant information is analyzed.
+
+* **Scalable Storage**: Stores emails and their embeddings in MongoDB for fast retrieval and similarity searches.
+
+For example, an email like "Please provide my current loan balance for account 123456789" with a PDF attachment would be classified, have its details extracted, and checked against past emails—all in seconds!
+
+
 
 ## 🛠️ How We Built It
-Briefly outline the technologies, frameworks, and tools used in development.
+We crafted this system with a modern, scalable tech stack:
+* **FastAPI**: Built a RESTful API in Python using FastAPI to handle email submissions and attachment uploads via a /process_email endpoint.
+
+* **OpenAI API**: Leveraged GPT-4 for classifying request types and extracting sub-requests, and the embedding API (e.g., text-embedding-ada-002) for generating vectors for similarity checks.
+
+* **MongoDB Atlas**: Implemented a database with vector search capabilities to store emails and perform nearest-neighbor searches for duplicate detection.
+
+* **Text Extraction**: Used libraries like PyPDF2 (for PDFs), python-docx (for DOCX), and pytesseract (for OCR on images) to process attachments.
+
+* **Kubernetes**: Deployed the application on Kubernetes to ensure scalability and reliability under high email volumes.
+
+* **Dataset Utilization**: Employed a JSON dataset of 180 labeled emails for few-shot learning and pre-computing embeddings, enhancing classification accuracy.
+
+The workflow starts with text extraction, followed by embedding generation and vector search for classification, then LLM-based extraction, and finally storage and response generation.
+
+
 
 ## 🚧 Challenges We Faced
-Describe the major technical or non-technical challenges your team encountered.
+Building this system wasn’t without hurdles:
+* **Diverse Attachments**: Extracting text from varied file formats—especially scanned PDFs and images—required integrating OCR and ensuring compatibility across types.
+
+* **Duplicate Detection Accuracy**: Fine-tuning vector search similarity thresholds in MongoDB to catch true duplicates without excessive false positives was tricky.
+
+* **Cost and Rate Limits**: Managing OpenAI API usage for classification, extraction, and embeddings while staying within budget and avoiding rate limits posed a balancing act.
+
+* **Scalability**: Ensuring the system could handle large email volumes led us to Kubernetes, but configuring it for optimal performance took extra effort.
+
+
 
 ## 🏃 How to Run
 1. Clone the repository  
    ```sh
    git clone https://github.com/your-repo.git
    ```
-2. Install dependencies  
+2. Install dependencies
+   Ensure Python 3.8+ is installed, then run:   
    ```sh
-   npm install  # or pip install -r requirements.txt (for Python)
+   pip install -r requirements.txt (for Python)
    ```
-3. Run the project  
+4. Run the project  
    ```sh
-   npm start  # or python app.py
+   python app.py
    ```
 
 ## 🏗️ Tech Stack
-- 🔹 Frontend: React / Vue / Angular
-- 🔹 Backend: Node.js / FastAPI / Django
-- 🔹 Database: PostgreSQL / Firebase
-- 🔹 Other: OpenAI API / Twilio / Stripe
+- 🔹 Frontend: React
+- 🔹 AI/ML: OpenAI API (GPT-4 for classification/extraction, embeddings for vector search)
+- 🔹 Text Extraction (OCR): PyPDF2 (PDFs), python-docx (DOCX), pytesseract (OCR for images) 
+- 🔹 Deployment: Docker, Kuberenetes – Ensures scalability and resilience 
+- 🔹 Backend: FastAPI (Python) – Lightweight, fast API framework
+- 🔹 Database: MongoDB Atlas – Scalable storage with vector search  
+- 🔹 Other: Uvicorn (ASGI server), Pymongo (MongoDB driver)
+
 
 ## 👥 Team
-- **Your Name** - [GitHub](#) | [LinkedIn](#)
-- **Teammate 2** - [GitHub](#) | [LinkedIn](#)
+- **Yajat Malhotra** - [GitHub](https://github.com/iamyajat) | [LinkedIn](https://www.linkedin.com/in/iamyajat/)
+- **Himanshu Thakur** - [GitHub](https://github.com/himanshu-thakur-7) | [LinkedIn](https://www.linkedin.com/in/himanshu-thakur-9582631a6/)
